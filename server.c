@@ -22,6 +22,12 @@ Roll : MT2022020
 #include<stdlib.h>
 extern int errno;
 
+struct user{
+	int type;
+	char name[50],ph_no[11],pswd[20],name2[50];
+	long amount;
+	long account_no;
+}; 
 int administrator_login(int nsd){
 	struct administrator{
 		char ph_no[11];
@@ -48,6 +54,54 @@ int administrator_login(int nsd){
 	return ret;
 }
 
+int Add(int nsd){
+	struct user u;
+	int ret;
+	read(nsd,&u.type,sizeof(u.type));
+	if(u.type!=1 && u.type!=2){
+		ret=0;
+		write(nsd,&ret,sizeof(ret));
+		return ret;
+	}
+	read(nsd,u.name,sizeof(u.name));
+	if(u.type==2){
+		read(nsd,u.name2,sizeof(u.name2));
+	}
+	read(nsd,&u.amount,sizeof(u.amount));
+	read(nsd,u.ph_no,sizeof(u.ph_no));
+	read(nsd,u.pswd,sizeof(u.pswd));
+	if(u.type==2){
+		int fd=open("joint_account_user_db",O_RDWR);
+		lseek(fd,(-1)*sizeof(u),SEEK_END);
+		struct user tmp;
+		if(read(fd,&tmp,sizeof(tmp))){
+			u.account_no=tmp.account_no+1;
+		}
+		else{
+			u.account_no=100;
+		}
+		lseek(fd,0,SEEK_END);
+		write(fd,&u,sizeof(u));
+		close(fd);
+	}
+	else{
+		int fd=open("normal_user_db",O_RDWR);
+		lseek(fd,(-1)*sizeof(u),SEEK_END);
+		struct user tmp;
+		if(read(fd,&tmp,sizeof(tmp))){
+			u.account_no=tmp.account_no+1;
+		}
+		else{
+			u.account_no=1000;
+		}
+		lseek(fd,0,SEEK_END);
+		write(fd,&u,sizeof(u));
+		close(fd);
+	}
+	ret=u.account_no;
+	write(nsd,&ret,sizeof(ret));
+	return ret;
+}
 int main(){
 	int fd=open("normal_user_db",O_RDWR|O_CREAT|O_EXCL,0764);
 	close(fd);
@@ -94,7 +148,10 @@ int main(){
 				if(ret==1){
 					read(nsd,&i,sizeof(i));
 					if(i==1){
-					
+						ret=Add(nsd);
+						if(ret==1){
+							
+						}
 					}
 					else if(i==2){
 					

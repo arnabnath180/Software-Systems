@@ -41,7 +41,47 @@ int login(int sd){
 	return ret;
 }
 
-
+int Add(int sd){
+	printf("Enter account type:\n1:Normal user\n2:Joint account\n");
+	int type;
+	int ret;
+	scanf("%d",&type);
+	getchar();
+	write(sd,&type,sizeof(type));
+	if(type!=1 && type!=2){
+		read(sd,&ret,sizeof(ret));
+		printf("Adding failed\n");
+		return ret;
+	}
+	printf("Enter account holder name:\n");
+	char name[50];
+	fgets(name,50,stdin);
+	write(sd,name,sizeof(name));
+	if(type==2){
+		printf("Enter account holder 2 name:\n");
+		char name2[50];
+		fgets(name2,50,stdin);
+		write(sd,name2,sizeof(name2));
+	}
+	printf("Enter amount:\n");
+	long amount;
+	scanf("%ld",&amount);
+	getchar();
+	write(sd,&amount,sizeof(amount));
+	printf("Enter phone number:\n");
+	char ph_no[11];
+	fgets(ph_no,11,stdin);
+	getchar();
+	write(sd,ph_no,sizeof(ph_no));
+	printf("Enter password:\n");
+	char pswd[20];
+	fgets(pswd,20,stdin);
+	write(sd,pswd,sizeof(pswd));
+	read(sd,&ret,sizeof(ret));
+	printf("Account added successfully\n");
+	printf("Account number%d\n",ret);
+	return ret;
+} 
 
 int main(){
 	struct sockaddr_in serv;
@@ -73,7 +113,8 @@ int main(){
 			scanf("%d",&i);
 			write(sd,&i,sizeof(i));
 			if(i==1){
-					
+				ret=Add(sd);
+									
 			}
 			else if(i==2){
 					
