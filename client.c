@@ -21,6 +21,28 @@ Roll : MT2022020
 #include <sys/socket.h>
 extern int errno;
 
+int login(int sd){
+	printf("Enter phone number:\n");
+	char ph_no[11];
+	scanf("%s",ph_no);
+	printf("Enter password:\n");
+	char pswd[20];
+	scanf("%s",pswd);
+	write(sd,ph_no,sizeof(ph_no));
+	write(sd,pswd,sizeof(pswd));
+	int ret;
+	read(sd,&ret,sizeof(ret));
+	if(ret==0){
+		printf("login failed\n");
+	}
+	else{
+		printf("login success\n");
+	}
+	return ret;
+}
+
+
+
 int main(){
 	struct sockaddr_in serv;
 	int sd=socket(AF_INET,SOCK_STREAM,0);
@@ -32,57 +54,38 @@ int main(){
 	if(nsd<0){
 		perror("Error");
 	}
-	while(1){
-		printf("Enter login option\n1:Normal User\n2:Joint Account User\n3:Administrator\n");
-		int i;
-		scanf("%d",&i);
-		write(sd,&i,sizeof(i));
-		if(i==1){
-			printf("Enter phone number:\n");
-			char ph_no[11];
-			scanf("%s",ph_no);
-			printf("Enter password:\n");
-			char pswd[20];
-			scanf("%s",pswd);
-			write(sd,ph_no,sizeof(ph_no));
-			write(sd,pswd,sizeof(pswd));
+	printf("Enter login option:\n1:Normal User\n2:Joint Account User\n3:Administrator\n");
+	int i,ret;
+	scanf("%d",&i);
+	write(sd,&i,sizeof(i));
+	if(i==1){
 			
-		}
-		else if(i==2){
-			printf("Enter phone number:\n");
-			char ph_no[11];
-			scanf("%s",ph_no);
-			printf("Enter password:\n");
-			char pswd[20];
-			scanf("%s",pswd);
-			write(sd,ph_no,sizeof(ph_no));
-			write(sd,pswd,sizeof(pswd));
+			
+	}
+	else if(i==2){
+			
 		
-		}
-		else if(i==3){
-			printf("Enter phone number:\n");
-			char ph_no[11];
-			scanf("%s",ph_no);
-			printf("Enter password:\n");
-			char pswd[20];
-			scanf("%s",pswd);
-			write(sd,ph_no,sizeof(ph_no));
-			write(sd,pswd,sizeof(pswd));
-			int ret;
-			read(sd,&ret,sizeof(ret));
-			if(ret==0){
-				printf("login failed\n");
+	}
+	else if(i==3){
+		ret=login(sd);
+		if(ret==1){
+			printf("Enter operation you want to perform:\n1:Add\n2:Delete\n3:Modify\n4:Search\n");
+			scanf("%d",&i);
+			write(sd,&i,sizeof(i));
+			if(i==1){
+					
 			}
-			else{
-				printf("login success\n");
+			else if(i==2){
+					
 			}
-		}
-		else{
-			printf("Wrong Input\n");
+			else if(i==3){
+					
+			}
+			else if(i==4){
+					
+			}
 		}
 	}
-	
-	
-	
+
 	close(nsd);
 }
