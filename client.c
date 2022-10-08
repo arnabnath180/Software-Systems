@@ -21,6 +21,13 @@ Roll : MT2022020
 #include <sys/socket.h>
 extern int errno;
 
+struct user{
+	int type;
+	char name[50],ph_no[11],pswd[20],name2[50];
+	long amount;
+	int account_no;
+}; 
+
 int login(int sd){
 	printf("Enter phone number:\n");
 	char ph_no[11];
@@ -56,11 +63,13 @@ int Add(int sd){
 	printf("Enter account holder name:\n");
 	char name[50];
 	fgets(name,50,stdin);
+	name[strlen(name)-1]='\0';
 	write(sd,name,sizeof(name));
 	if(type==2){
 		printf("Enter account holder 2 name:\n");
 		char name2[50];
 		fgets(name2,50,stdin);
+		name2[strlen(name2)-1]='\0';
 		write(sd,name2,sizeof(name2));
 	}
 	printf("Enter amount:\n");
@@ -76,13 +85,113 @@ int Add(int sd){
 	printf("Enter password:\n");
 	char pswd[20];
 	fgets(pswd,20,stdin);
+	pswd[strlen(pswd)-1]='\0';
 	write(sd,pswd,sizeof(pswd));
 	read(sd,&ret,sizeof(ret));
 	printf("Account added successfully\n");
-	printf("Account number%d\n",ret);
+	printf("Account number:%d\n",ret);
 	return ret;
 } 
 
+int Search(int sd){
+	struct user u;
+	printf("Enter account type:\n1:Normal user\n2:Joint account\n");
+	int type;
+	int ret;
+	scanf("%d",&type);
+	write(sd,&type,sizeof(type));
+	if(type!=1 && type!=2){
+		read(sd,&ret,sizeof(ret));
+		printf("Search failed\n");
+		return ret;
+	}
+	printf("Enter account number:\n");
+	int account_no;
+	scanf("%d",&account_no);
+	write(sd,&account_no,sizeof(account_no));
+	read(sd,&ret,sizeof(ret));
+	if(ret==1){
+		read(sd,&u,sizeof(u));
+		printf("Name:%s\n",u.name);
+		if(type==2){
+			printf("Name2:%s\n",u.name2);
+		}
+		printf("Phone number:%s\n",u.ph_no);
+		printf("Amount:%ld\n",u.amount);
+		printf("Account number:%d\n",u.account_no);
+		return ret;
+	}
+	printf("Search failed\n");
+	return ret;
+}
+
+int Modify(int sd){
+	struct user u;
+	printf("Enter account type:\n1:Normal user\n2:Joint account\n");
+	int type;
+	int ret,i;
+	scanf("%d",&type);
+	write(sd,&type,sizeof(type));
+	if(type!=1 && type!=2){
+		read(sd,&ret,sizeof(ret));
+		printf("Search failed\n");
+		return ret;
+	}
+	printf("Enter account number\n");
+	int account_no;
+	scanf("%d",&account_no);
+	write(sd,&account_no,sizeof(account_no));
+	read(sd,&ret,sizeof(ret));
+	if(ret==0){
+		printf("Search failed\n");
+		return ret;
+	}
+	read(sd,&u,sizeof(u));
+	printf("Name:%s\n",u.name);
+	if(type==2){
+		printf("Name2:%s\n",u.name2);
+	}
+	printf("Phone number:%s\n",u.ph_no);
+	printf("Amount:%ld\n",u.amount);
+	printf("Account number:%d\n",u.account_no);
+	printf("Change username\n1:Yes\n2:No\n");
+	scanf("%d",&i);
+	if(i==1){
+		printf("Enter Name:\n");
+		getchar();
+		fgets(u.name,50,stdin);
+		u.name[strlen(u.name)-1]='\0';
+	}
+	else{
+		u.name[0]='\0';
+	}
+	if(type==2){
+		printf("Change username2\n1:Yes\n2:No\n");
+		scanf("%d",&i);
+		if(i==1){
+			printf("Enter Name:\n");
+			getchar();
+			fgets(u.name2,50,stdin);
+			u.name2[strlen(u.name2)-1]='\0';
+		}
+		else{
+			u.name2[0]='\0';
+		}
+	}
+	printf("Change phone number\n1:Yes\n2:No\n");
+	scanf("%d",&i);
+	if(i==1){
+		printf("Enter phone number:\n");
+		getchar();
+		fgets(u.ph_no,11,stdin);
+	}
+	else{
+		u.ph_no[0]='\0';
+	}
+	write(sd,&u,sizeof(u));
+	read(sd,&ret,sizeof(ret));
+	return ret;
+}
 int main(){
 	struct sockaddr_in serv;
 	int sd=socket(AF_INET,SOCK_STREAM,0);
@@ -120,10 +229,10 @@ int main(){
 					
 			}
 			else if(i==3){
-					
+				ret=Modify(sd);	
 			}
 			else if(i==4){
-					
+				ret=Search(sd);	
 			}
 		}
 	}
