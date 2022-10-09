@@ -29,6 +29,27 @@ struct user{
 	int account_no;
 }; 
 
+void lock(int fd,short ltype){
+	struct flock lock;
+	lock.l_type=ltype;
+	lock.l_whence=SEEK_SET;
+	lock.l_start=0;
+	lock.l_len=0;
+	lock.l_pid=getpid();
+	fcntl(fd,F_SETLKW,&lock);
+}
+
+void unlock(int fd){
+	struct flock lock;
+	lock.l_type=F_UNLCK;
+	lock.l_whence=SEEK_SET;
+	lock.l_start=0;
+	lock.l_len=0;
+	lock.l_pid=getpid();
+	fcntl(fd,F_SETLK,&lock);
+}
+
+
 
 int administrator_login(int nsd){
 	struct administrator{
@@ -42,6 +63,7 @@ int administrator_login(int nsd){
 	read(nsd,ph_no,sizeof(ph_no));
 	read(nsd,pswd,sizeof(pswd));
 	fd=open("administrator_db",O_RDWR);
+	lock(fd,F_RDLCK);
 	while(nbytes=read(fd,&administrator_db,sizeof(administrator_db))){
 		if(!strcmp(administrator_db.ph_no,ph_no) && !strcmp(administrator_db.pswd,pswd)){
 			ret=1;
@@ -49,6 +71,7 @@ int administrator_login(int nsd){
 			break;
 		}
 	}
+	unlock(fd);
 	if(nbytes==0){
 		ret=0;
 		write(nsd,&ret,sizeof(ret));
@@ -74,6 +97,7 @@ int Add(int nsd){
 	read(nsd,u.pswd,sizeof(u.pswd));
 	if(u.type==2){
 		int fd=open("joint_account_user_db",O_RDWR);
+		lock(fd,F_WRLCK);
 		lseek(fd,(-1)*sizeof(u),SEEK_END);
 		struct user tmp;
 		if(read(fd,&tmp,sizeof(tmp))){
@@ -84,10 +108,14 @@ int Add(int nsd){
 		}
 		lseek(fd,0,SEEK_END);
 		write(fd,&u,sizeof(u));
+		unlock(fd);
 		close(fd);
 	}
 	else{
 		int fd=open("normal_user_db",O_RDWR);
+		lock(fd,F_WRLCK);
+		printf("ff\n");
+		sleep(20);
 		lseek(fd,(-1)*sizeof(u),SEEK_END);
 		struct user tmp;
 		if(read(fd,&tmp,sizeof(tmp))){
@@ -98,6 +126,7 @@ int Add(int nsd){
 		}
 		lseek(fd,0,SEEK_END);
 		write(fd,&u,sizeof(u));
+		unlock(fd);
 		close(fd);
 	}
 	ret=u.account_no;
@@ -119,27 +148,35 @@ int Search(int nsd){
 	read(nsd,&account_no,sizeof(account_no));
 	if(type==1){
 		int fd=open("normal_user_db",O_RDONLY);
+		lock(fd,F_RDLCK);
 		while(read(fd,&u,sizeof(u))){
 			if(u.account_no==account_no){
 				ret=1;
 				write(nsd,&ret,sizeof(ret));
 				write(nsd,&u,sizeof(u));
+				unlock(fd);
 				close(fd);
 				return 1;
 			}
 		}
+		unlock(fd);
+		close(fd);
 	}
 	else{
 		int fd=open("joint_account_user_db",O_RDONLY);
+		lock(fd,F_RDLCK);
 		while(read(fd,&u,sizeof(u))){
 			if(u.account_no==account_no){
 				ret=1;
 				write(nsd,&ret,sizeof(ret));
 				write(nsd,&u,sizeof(u));
+				unlock(fd);
 				close(fd);
 				return 1;	
 			}
 		}
+		unlock(fd);
+		close(fd);
 	}
 	ret=0;
 	write(nsd,&ret,sizeof(ret));
@@ -159,29 +196,33 @@ int Modify(int nsd){
 	read(nsd,&account_no,sizeof(account_no));
 	if(type==1){
 		int fd=open("normal_user_db",O_RDONLY);
+		lock(fd,F_RDLCK);
 		while(nbytes=read(fd,&u,sizeof(u))){
 			if(u.account_no==account_no){
 				ret=1;
 				write(nsd,&ret,sizeof(ret));
 				write(nsd,&u,sizeof(u));
-				close(fd);
 				break;
 			}
 			nr++;
 		}
+		unlock(fd);
+		close(fd);
 	}
 	else{
 		int fd=open("joint_account_user_db",O_RDONLY);
+		lock(fd,F_RDLCK);
 		while(nbytes=read(fd,&u,sizeof(u))){
 			if(u.account_no==account_no){
 				ret=1;
 				write(nsd,&ret,sizeof(ret));
 				write(nsd,&u,sizeof(u));
-				close(fd);
 				break;	
 			}
 			nr++;
 		}
+		unlock(fd);
+		close(fd);
 	}
 	if(nbytes==0){
 		ret=0;
@@ -191,6 +232,7 @@ int Modify(int nsd){
 	read(nsd,&u,sizeof(u));
 	if(type==1){
 		int fd=open("normal_user_db",O_RDWR);
+		lock(fd,F_WRLCK);
 		lseek(fd,nr*sizeof(u),SEEK_SET);
 		struct user u1;
 		read(fd,&u1,sizeof(u1));
@@ -202,10 +244,12 @@ int Modify(int nsd){
 			strcpy(u.ph_no,u1.ph_no);
 		}
 		write(fd,&u,sizeof(u));
+		unlock(fd);
 		close(fd);
 	}
 	else{
 		int fd=open("joint_account_user_db",O_RDWR);
+		lock(fd,F_WRLCK);
 		lseek(fd,nr*sizeof(u),SEEK_SET);
 		struct user u1;
 		read(fd,&u1,sizeof(u1));
@@ -220,6 +264,7 @@ int Modify(int nsd){
 			strcpy(u.ph_no,u1.ph_no);
 		}
 		write(fd,&u,sizeof(u));
+		unlock(fd);
 		close(fd);
 	}
 	ret=1;
@@ -240,29 +285,33 @@ int Delete(int nsd){
 	read(nsd,&account_no,sizeof(account_no));
 	if(type==1){
 		int fd=open("normal_user_db",O_RDONLY);
+		lock(fd,F_RDLCK);
 		while(nbytes=read(fd,&u,sizeof(u))){
 			if(u.account_no==account_no){
 				ret=1;
 				write(nsd,&ret,sizeof(ret));
 				write(nsd,&u,sizeof(u));
-				close(fd);
 				break;
 			}
 			nr++;
 		}
+		unlock(fd);
+		close(fd);
 	}
 	else{
 		int fd=open("joint_account_user_db",O_RDONLY);
+		lock(fd,F_RDLCK);
 		while(nbytes=read(fd,&u,sizeof(u))){
 			if(u.account_no==account_no){
 				ret=1;
 				write(nsd,&ret,sizeof(ret));
 				write(nsd,&u,sizeof(u));
-				close(fd);
 				break;	
 			}
 			nr++;
 		}
+		unlock(fd);
+		close(fd);
 	}
 	if(nbytes==0){
 		ret=0;
@@ -271,6 +320,7 @@ int Delete(int nsd){
 	}
 	if(type==1){
 		int fd1=open("normal_user_db",O_RDWR);
+
 		int fd=open("tmp_db",O_RDWR|O_CREAT,0764);
 		while(nbytes=read(fd1,&u,sizeof(u))){
 			if(u.account_no==account_no){
@@ -278,10 +328,11 @@ int Delete(int nsd){
 			}
 			write(fd,&u,sizeof(u));
 		}
-		close(fd1);
-		close(fd);
 		unlink("normal_user_db");
 		rename("tmp_db","normal_user_db");
+
+		close(fd1);
+		close(fd);
 	}
 	else{
 		int fd1=open("joint_account_user_db",O_RDWR);
