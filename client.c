@@ -192,6 +192,42 @@ int Modify(int sd){
 	read(sd,&ret,sizeof(ret));
 	return ret;
 }
+
+int Delete(int sd){
+	struct user u;
+	printf("Enter account type:\n1:Normal user\n2:Joint account\n");
+	int type;
+	int ret,i;
+	scanf("%d",&type);
+	write(sd,&type,sizeof(type));
+	if(type!=1 && type!=2){
+		read(sd,&ret,sizeof(ret));
+		printf("Search failed\n");
+		return ret;
+	}
+	printf("Enter account number\n");
+	int account_no;
+	scanf("%d",&account_no);
+	write(sd,&account_no,sizeof(account_no));
+	read(sd,&ret,sizeof(ret));
+	if(ret==0){
+		printf("Search failed\n");
+		return ret;
+	}
+	read(sd,&u,sizeof(u));
+	printf("Name:%s\n",u.name);
+	if(type==2){
+		printf("Name2:%s\n",u.name2);
+	}
+	printf("Phone number:%s\n",u.ph_no);
+	printf("Amount:%ld\n",u.amount);
+	printf("Account number:%d\n",u.account_no);
+	read(sd,&ret,sizeof(ret));
+	if(ret==1){
+		printf("Deleted Successfully\n");
+	}
+	return ret;
+}
 int main(){
 	struct sockaddr_in serv;
 	int sd=socket(AF_INET,SOCK_STREAM,0);
@@ -226,7 +262,7 @@ int main(){
 									
 			}
 			else if(i==2){
-					
+				ret=Delete(sd);
 			}
 			else if(i==3){
 				ret=Modify(sd);	

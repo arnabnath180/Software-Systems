@@ -225,6 +225,81 @@ int Modify(int nsd){
 	return 1;
 }
 
+int Delete(int nsd){
+	int type,ret,nbytes,nr=0;
+	struct user u;
+	read(nsd,&type,sizeof(type));
+	if(type!=1 && type!=2){
+		ret=0;
+		write(nsd,&ret,sizeof(ret));
+		return ret;
+	}
+	int account_no;
+	read(nsd,&account_no,sizeof(account_no));
+	if(type==1){
+		int fd=open("normal_user_db",O_RDONLY);
+		while(nbytes=read(fd,&u,sizeof(u))){
+			if(u.account_no==account_no){
+				ret=1;
+				write(nsd,&ret,sizeof(ret));
+				write(nsd,&u,sizeof(u));
+				close(fd);
+				break;
+			}
+			nr++;
+		}
+	}
+	else{
+		int fd=open("joint_account_user_db",O_RDONLY);
+		while(nbytes=read(fd,&u,sizeof(u))){
+			if(u.account_no==account_no){
+				ret=1;
+				write(nsd,&ret,sizeof(ret));
+				write(nsd,&u,sizeof(u));
+				close(fd);
+				break;	
+			}
+			nr++;
+		}
+	}
+	if(nbytes==0){
+		ret=0;
+		write(nsd,&ret,sizeof(ret));
+		return 0;
+	}
+	if(type==1){
+		int fd1=open("normal_user_db",O_RDWR);
+		int fd=open("tmp_db",O_RDWR|O_CREAT,0764);
+		while(nbytes=read(fd1,&u,sizeof(u))){
+			if(u.account_no==account_no){
+				continue;
+			}
+			write(fd,&u,sizeof(u));
+		}
+		close(fd1);
+		close(fd);
+		unlink("normal_user_db");
+		rename("tmp_db","normal_user_db");
+	}
+	else{
+		int fd1=open("joint_account_user_db",O_RDWR);
+		int fd=open("tmp_db",O_RDWR|O_CREAT,0764);
+		while(nbytes=read(fd1,&u,sizeof(u))){
+			if(u.account_no==account_no){
+				continue;
+			}
+			write(fd,&u,sizeof(u));
+		}
+		close(fd1);
+		close(fd);
+		unlink("joint_account_user_db");
+		rename("tmp_db","joint_account_user_db");
+	}
+	ret=1;
+	write(nsd,&ret,sizeof(ret));
+	return 1;
+}
+
 int main(){
 	int fd=open("normal_user_db",O_RDWR|O_CREAT|O_EXCL,0764);
 	close(fd);
@@ -277,7 +352,7 @@ int main(){
 						}
 					}
 					else if(i==2){
-					
+						ret=Delete(nsd);
 					}
 					else if(i==3){
 						ret=Modify(nsd);
