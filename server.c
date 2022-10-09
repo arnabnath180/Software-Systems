@@ -28,6 +28,8 @@ struct user{
 	long amount;
 	int account_no;
 }; 
+
+
 int administrator_login(int nsd){
 	struct administrator{
 		char ph_no[11];
@@ -344,24 +346,25 @@ int main(){
 			else if(i==3){
 				ret=administrator_login(nsd);
 				if(ret==1){
-					read(nsd,&i,sizeof(i));
-					if(i==1){
-						ret=Add(nsd);
-						if(ret==1){
-							
+					while(1){
+						read(nsd,&i,sizeof(i));
+						if(i==1){
+							ret=Add(nsd);
+						}
+						else if(i==2){
+							ret=Delete(nsd);
+						}
+						else if(i==3){
+							ret=Modify(nsd);
+						}
+						else if(i==4){
+							ret=Search(nsd);
+						}
+						else{
+							break;
 						}
 					}
-					else if(i==2){
-						ret=Delete(nsd);
-					}
-					else if(i==3){
-						ret=Modify(nsd);
-					}
-					else if(i==4){
-						ret=Search(nsd);
-					}
 				}
-				
 			}
 			exit(0);
 		}

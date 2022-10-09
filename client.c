@@ -254,24 +254,27 @@ int main(){
 	else if(i==3){
 		ret=login(sd);
 		if(ret==1){
-			printf("Enter operation you want to perform:\n1:Add\n2:Delete\n3:Modify\n4:Search\n");
-			scanf("%d",&i);
-			write(sd,&i,sizeof(i));
-			if(i==1){
-				ret=Add(sd);
-									
-			}
-			else if(i==2){
-				ret=Delete(sd);
-			}
-			else if(i==3){
-				ret=Modify(sd);	
-			}
-			else if(i==4){
-				ret=Search(sd);	
+			while(1){
+				printf("Enter operation you want to perform:\n1:Add\n2:Delete\n3:Modify\n4:Search\n5:Exit\n");
+				scanf("%d",&i);
+				write(sd,&i,sizeof(i));
+				if(i==1){
+					ret=Add(sd);					
+				}
+				else if(i==2){
+					ret=Delete(sd);
+				}
+				else if(i==3){
+					ret=Modify(sd);	
+				}
+				else if(i==4){
+					ret=Search(sd);	
+				}
+				else{
+					break;
+				}
 			}
 		}
 	}
-
 	close(nsd);
 }
