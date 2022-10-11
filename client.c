@@ -231,6 +231,31 @@ int Delete(int sd){
 	}
 	return ret;
 }
+
+int login_user(int sd){
+	printf("Enter account number:\n");
+	int account_no;
+	scanf("%d",&account_no);
+	printf("Enter password:\n");
+	char pswd[20];
+	scanf("%s",pswd);
+	write(sd,&account_no,sizeof(account_no));
+	write(sd,pswd,sizeof(pswd));
+	int ret;
+	read(sd,&ret,sizeof(ret));
+	if(ret==0){
+		printf("login failed\n");
+	}
+	else{
+		printf("login success\n");
+	}
+	return ret;
+}
+
+
+
+
+
 int main(){
 	struct sockaddr_in serv;
 	int sd=socket(AF_INET,SOCK_STREAM,0);
@@ -247,8 +272,32 @@ int main(){
 	scanf("%d",&i);
 	write(sd,&i,sizeof(i));
 	if(i==1){
-			
-			
+		ret=login_user(sd);
+		if(ret==1){
+			while(1){
+				printf("Enter operation you want to perform:\n1:Deposit\n2:Withdraw\n3:Balance Ecquiry\n4:Password Change\n5:View Details\n6:Exit\n");
+				scanf("%d",&i);
+				write(sd,&i,sizeof(i));
+				if(i==1){
+					//ret=Deposit(sd);					
+				}
+				else if(i==2){
+					//ret=Withdraw(sd);
+				}
+				else if(i==3){
+					//ret=BalanceEnquiry(sd);	
+				}
+				else if(i==4){
+					//ret=PasswordChange(sd);	
+				}
+				else if(i==5){
+					//ret=ViewDetails(sd);	
+				}
+				else{
+					break;
+				}
+			}
+		}			
 	}
 	else if(i==2){
 			

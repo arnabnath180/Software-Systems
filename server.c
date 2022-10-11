@@ -347,6 +347,35 @@ int Delete(int nsd){
 	return 1;
 }
 
+int login_user(int nsd){
+	struct user u;
+	int account_no;
+	int fd;
+	int nbytes;
+	int ret;
+	char pswd[20];
+	read(nsd,&account_no,sizeof(account_no));
+	read(nsd,pswd,sizeof(pswd));
+	if(account_no & 1)
+		fd=open("normal_user_db",O_RDONLY);
+	else
+		fd=open("joint_account_user_db",O_RDONLY);
+	lock(fd,F_RDLCK);
+	while(nbytes=read(fd,&u,sizeof(u))){
+		if(u.account_no==account_no && !strcmp(u.pswd,pswd) && u.status==true){
+			ret=1;
+			write(nsd,&ret,sizeof(ret));
+			break;
+		}
+	}
+	unlock(fd);
+	if(nbytes==0){
+		ret=0;
+		write(nsd,&ret,sizeof(ret));
+	}
+	return ret;	
+}
+
 int main(){
 	int fd=open("normal_user_db",O_RDWR|O_CREAT|O_EXCL,0764);
 	close(fd);
@@ -383,7 +412,30 @@ int main(){
 			int i,ret;
 			read(nsd,&i,sizeof(i));
 			if(i==1){
-				
+				ret=login_user(nsd);
+				if(ret==1){
+					while(1){
+						read(nsd,&i,sizeof(i));
+						if(i==1){
+							//ret=Deposit(nsd);
+						}
+						else if(i==2){
+							//ret=Withdraw(nsd);
+						}
+						else if(i==3){
+							//ret=BalanceEnquiry(nsd);
+						}
+						else if(i==4){
+							//ret=PasswordChange(nsd);
+						}
+						else if(i==5){
+							//ret=ViewDetails(sd);	
+						}
+						else{
+							break;
+						}
+					}
+				}
 			}
 			else if(i==2){
 				
