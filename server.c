@@ -5,6 +5,7 @@ Roll : MT2022020
 
 */
 
+#include<stdbool.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/wait.h>
@@ -27,6 +28,7 @@ struct user{
 	char name[50],ph_no[11],pswd[20],name2[50];
 	long amount;
 	int account_no;
+	bool status;
 }; 
 
 void lock(int fd,short ltype){
@@ -101,12 +103,13 @@ int Add(int nsd){
 		lseek(fd,(-1)*sizeof(u),SEEK_END);
 		struct user tmp;
 		if(read(fd,&tmp,sizeof(tmp))){
-			u.account_no=tmp.account_no+1;
+			u.account_no=tmp.account_no+2;
 		}
 		else{
 			u.account_no=100;
 		}
 		lseek(fd,0,SEEK_END);
+		u.status=true;
 		write(fd,&u,sizeof(u));
 		unlock(fd);
 		close(fd);
@@ -114,17 +117,16 @@ int Add(int nsd){
 	else{
 		int fd=open("normal_user_db",O_RDWR);
 		lock(fd,F_WRLCK);
-		printf("ff\n");
-		sleep(20);
 		lseek(fd,(-1)*sizeof(u),SEEK_END);
 		struct user tmp;
 		if(read(fd,&tmp,sizeof(tmp))){
-			u.account_no=tmp.account_no+1;
+			u.account_no=tmp.account_no+2;
 		}
 		else{
-			u.account_no=1000;
+			u.account_no=101;
 		}
 		lseek(fd,0,SEEK_END);
+		u.status=true;
 		write(fd,&u,sizeof(u));
 		unlock(fd);
 		close(fd);
@@ -150,7 +152,7 @@ int Search(int nsd){
 		int fd=open("normal_user_db",O_RDONLY);
 		lock(fd,F_RDLCK);
 		while(read(fd,&u,sizeof(u))){
-			if(u.account_no==account_no){
+			if(u.account_no==account_no && u.status==true){
 				ret=1;
 				write(nsd,&ret,sizeof(ret));
 				write(nsd,&u,sizeof(u));
@@ -166,7 +168,7 @@ int Search(int nsd){
 		int fd=open("joint_account_user_db",O_RDONLY);
 		lock(fd,F_RDLCK);
 		while(read(fd,&u,sizeof(u))){
-			if(u.account_no==account_no){
+			if(u.account_no==account_no && u.status==true){
 				ret=1;
 				write(nsd,&ret,sizeof(ret));
 				write(nsd,&u,sizeof(u));
@@ -198,7 +200,7 @@ int Modify(int nsd){
 		int fd=open("normal_user_db",O_RDONLY);
 		lock(fd,F_RDLCK);
 		while(nbytes=read(fd,&u,sizeof(u))){
-			if(u.account_no==account_no){
+			if(u.account_no==account_no && u.status==true){
 				ret=1;
 				write(nsd,&ret,sizeof(ret));
 				write(nsd,&u,sizeof(u));
@@ -213,7 +215,7 @@ int Modify(int nsd){
 		int fd=open("joint_account_user_db",O_RDONLY);
 		lock(fd,F_RDLCK);
 		while(nbytes=read(fd,&u,sizeof(u))){
-			if(u.account_no==account_no){
+			if(u.account_no==account_no && u.status==true){
 				ret=1;
 				write(nsd,&ret,sizeof(ret));
 				write(nsd,&u,sizeof(u));
@@ -287,7 +289,7 @@ int Delete(int nsd){
 		int fd=open("normal_user_db",O_RDONLY);
 		lock(fd,F_RDLCK);
 		while(nbytes=read(fd,&u,sizeof(u))){
-			if(u.account_no==account_no){
+			if(u.account_no==account_no && u.status==true){
 				ret=1;
 				write(nsd,&ret,sizeof(ret));
 				write(nsd,&u,sizeof(u));
@@ -302,7 +304,7 @@ int Delete(int nsd){
 		int fd=open("joint_account_user_db",O_RDONLY);
 		lock(fd,F_RDLCK);
 		while(nbytes=read(fd,&u,sizeof(u))){
-			if(u.account_no==account_no){
+			if(u.account_no==account_no && u.status==true){
 				ret=1;
 				write(nsd,&ret,sizeof(ret));
 				write(nsd,&u,sizeof(u));
@@ -319,34 +321,26 @@ int Delete(int nsd){
 		return 0;
 	}
 	if(type==1){
-		int fd1=open("normal_user_db",O_RDWR);
-
-		int fd=open("tmp_db",O_RDWR|O_CREAT,0764);
-		while(nbytes=read(fd1,&u,sizeof(u))){
-			if(u.account_no==account_no){
-				continue;
-			}
-			write(fd,&u,sizeof(u));
-		}
-		unlink("normal_user_db");
-		rename("tmp_db","normal_user_db");
-
-		close(fd1);
+		int fd=open("normal_user_db",O_RDWR);
+		lock(fd,F_WRLCK);
+		lseek(fd,nr*sizeof(u),SEEK_SET);
+		read(fd,&u,sizeof(u));
+		u.status=false;
+		lseek(fd,nr*sizeof(u),SEEK_SET);
+		write(fd,&u,sizeof(u));
+		unlock(fd);
 		close(fd);
 	}
 	else{
-		int fd1=open("joint_account_user_db",O_RDWR);
-		int fd=open("tmp_db",O_RDWR|O_CREAT,0764);
-		while(nbytes=read(fd1,&u,sizeof(u))){
-			if(u.account_no==account_no){
-				continue;
-			}
-			write(fd,&u,sizeof(u));
-		}
-		close(fd1);
+		int fd=open("joint_account_user_db",O_RDWR);
+		lock(fd,F_WRLCK);
+		lseek(fd,nr*sizeof(u),SEEK_SET);
+		read(fd,&u,sizeof(u));
+		u.status=false;
+		lseek(fd,nr*sizeof(u),SEEK_SET);
+		write(fd,&u,sizeof(u));
+		unlock(fd);
 		close(fd);
-		unlink("joint_account_user_db");
-		rename("tmp_db","joint_account_user_db");
 	}
 	ret=1;
 	write(nsd,&ret,sizeof(ret));

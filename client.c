@@ -4,6 +4,8 @@ Author : Arnab Nath
 Roll : MT2022020
 
 */
+
+#include<stdbool.h>
 #include <arpa/inet.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -26,6 +28,7 @@ struct user{
 	char name[50],ph_no[11],pswd[20],name2[50];
 	long amount;
 	int account_no;
+	bool status;
 }; 
 
 int login(int sd){
