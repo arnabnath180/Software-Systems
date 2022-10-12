@@ -21,6 +21,7 @@ Roll : MT2022020
 #include <sys/sem.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#include<time.h>
 extern int errno;
 
 struct user{
@@ -30,6 +31,14 @@ struct user{
 	int account_no;
 	bool status;
 }; 
+
+struct transaction{
+	int account_no;
+	int amount;
+	struct tm time;
+	bool debited;
+	bool credited;
+};
 
 int login(int sd){
 	printf("Enter phone number:\n");
@@ -98,6 +107,7 @@ int Add(int sd){
 
 int Search(int sd){
 	struct user u;
+	struct transaction tr;
 	printf("Enter account type:\n1:Normal user\n2:Joint account\n");
 	int type;
 	int ret;
@@ -122,6 +132,19 @@ int Search(int sd){
 		printf("Phone number:%s\n",u.ph_no);
 		printf("Amount:%ld\n",u.amount);
 		printf("Account number:%d\n",u.account_no);
+		printf("Transactions Details:\n");
+		while(1){
+			read(sd,&tr,sizeof(tr));
+			if(tr.account_no==0) 
+				break;	
+			if(tr.debited==true)
+				printf("Debited\n");
+			if(tr.credited==true)
+				printf("Credited\n");
+			printf("Amount:%d\n",tr.amount);
+			printf("Time:%d:%d:%d\n",tr.time.tm_hour,tr.time.tm_min,tr.time.tm_sec);
+			printf("Time:%d:%d:%d\n",tr.time.tm_year+1900,tr.time.tm_mon+1,tr.time.tm_mday);
+		}
 		return ret;
 	}
 	printf("Search failed\n");

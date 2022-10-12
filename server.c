@@ -21,6 +21,7 @@ Roll : MT2022020
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include<stdlib.h>
+#include<time.h>
 extern int errno;
 
 struct user{
@@ -30,6 +31,14 @@ struct user{
 	int account_no;
 	bool status;
 }; 
+
+struct transaction{
+	int account_no;
+	int amount;
+	struct tm time;
+	bool debited;
+	bool credited;
+};
 
 void lock(int fd,short ltype){
 	struct flock lock;
@@ -131,6 +140,25 @@ int Add(int nsd){
 		unlock(fd);
 		close(fd);
 	}
+	int fd=open("transactions_db",O_RDWR);
+	lock(fd,F_WRLCK);
+	lseek(fd,0,SEEK_END);
+	struct transaction tr;
+	tr.account_no=u.account_no;
+	tr.amount=u.amount;
+	tr.debited=false;
+	tr.credited=true;
+	time_t t=time(NULL);
+	struct tm *tm=localtime(&t);
+	tr.time.tm_sec=tm->tm_sec;
+	tr.time.tm_min=tm->tm_min;
+	tr.time.tm_hour=tm->tm_hour;
+	tr.time.tm_year=tm->tm_year;
+	tr.time.tm_mon=tm->tm_mon;
+	tr.time.tm_mday=tm->tm_mday;
+	write(fd,&tr,sizeof(tr));
+	unlock(fd);
+	close(fd);
 	ret=u.account_no;
 	write(nsd,&ret,sizeof(ret));
 	return ret;
@@ -158,6 +186,18 @@ int Search(int nsd){
 				write(nsd,&u,sizeof(u));
 				unlock(fd);
 				close(fd);
+				fd=open("transactions_db",O_RDONLY);
+				lock(fd,F_RDLCK);
+				struct transaction tr;
+				while(read(fd,&tr,sizeof(tr))){
+					if(tr.account_no==account_no){
+						write(nsd,&tr,sizeof(tr));	
+					}
+				}
+				tr.account_no=0;
+				write(nsd,&tr,sizeof(tr));	
+				unlock(fd);
+				close(fd);
 				return 1;
 			}
 		}
@@ -172,6 +212,18 @@ int Search(int nsd){
 				ret=1;
 				write(nsd,&ret,sizeof(ret));
 				write(nsd,&u,sizeof(u));
+				unlock(fd);
+				close(fd);
+				fd=open("transactions_db",O_RDONLY);
+				lock(fd,F_RDLCK);
+				struct transaction tr;
+				while(read(fd,&tr,sizeof(tr))){
+					if(tr.account_no==account_no){
+						write(nsd,&tr,sizeof(tr));	
+					}
+				}
+				tr.account_no=0;
+				write(nsd,&tr,sizeof(tr));	
 				unlock(fd);
 				close(fd);
 				return 1;	
@@ -380,6 +432,8 @@ int main(){
 	int fd=open("normal_user_db",O_RDWR|O_CREAT|O_EXCL,0764);
 	close(fd);
 	fd=open("joint_account_user_db",O_RDWR|O_CREAT|O_EXCL,0764);
+	close(fd);
+	fd=open("transactions_db",O_RDWR|O_CREAT|O_EXCL,0764);
 	close(fd);
 	fd=open("administrator_db",O_RDWR|O_CREAT|O_EXCL,0764);
 	if(fd!=-1){
