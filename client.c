@@ -292,7 +292,36 @@ int Deposit(int sd,int account_no){
 	}
 }
 
+int Withdraw(int sd,int account_no){
+	int amount,ret;
+	printf("Enter amount:\n");
+	scanf("%d",&amount);
+	write(sd,&amount,sizeof(amount));
+	read(sd,&ret,sizeof(ret));
+	if(ret==0){
+		printf("Operation failed\n");
+		return 0;
+	}
+	else{
+		printf("Operation success\n");
+		return 1;
+	}
+}
 
+int BalanceEnquiry(int sd,int account_no){
+	int ret;
+	long amount;
+	read(sd,&ret,sizeof(ret));
+	if(ret==1){
+		read(sd,&amount,sizeof(amount));
+		printf("%ld\n",amount);
+		return 1;
+	}
+	else{
+		printf("Operation failed\n");
+		return 0;
+	}
+}
 
 int main(){
 	struct sockaddr_in serv;
@@ -321,10 +350,10 @@ int main(){
 					ret=Deposit(sd,account_no);					
 				}
 				else if(i==2){
-					//ret=Withdraw(sd);
+					ret=Withdraw(sd,account_no);
 				}
 				else if(i==3){
-					//ret=BalanceEnquiry(sd);	
+					ret=BalanceEnquiry(sd,account_no);	
 				}
 				else if(i==4){
 					//ret=PasswordChange(sd);	

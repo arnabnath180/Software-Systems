@@ -478,6 +478,81 @@ int Deposit(int nsd,int account_no){
 	return ret;
 }
 
+int Withdraw(int nsd,int account_no){
+	int amount,nbytes,ret;
+	struct user u;
+	struct transaction tr;
+	read(nsd,&amount,sizeof(amount));
+	int fd;
+	if(account_no & 1)
+		fd=open("normal_user_db",O_RDWR);
+	else
+		fd=open("joint_account_user_db",O_RDWR);
+	lock(fd,F_WRLCK);
+	while(nbytes=read(fd,&u,sizeof(u))){
+		if(u.account_no==account_no && u.status==true && amount<=u.amount){
+			int fd1=open("transactions_db",O_RDWR);
+			lock(fd1,F_WRLCK);
+			lseek(fd1,0,SEEK_END);
+			tr.account_no=u.account_no;
+			tr.amount=amount;
+			tr.debited=true;
+			tr.credited=false;
+			time_t t=time(NULL);
+			struct tm *tm=localtime(&t);
+			tr.time.tm_sec=tm->tm_sec;
+			tr.time.tm_min=tm->tm_min;
+			tr.time.tm_hour=tm->tm_hour;
+			tr.time.tm_year=tm->tm_year;
+			tr.time.tm_mon=tm->tm_mon;
+			tr.time.tm_mday=tm->tm_mday;
+			write(fd1,&tr,sizeof(tr));
+			unlock(fd1);
+			close(fd1);
+			u.amount=u.amount-amount;
+			lseek(fd,(-1)*sizeof(u),SEEK_CUR);
+			write(fd,&u,sizeof(u));
+			break;	
+		}
+	}
+	unlock(fd);
+	close(fd);
+	if(nbytes==0){
+		ret=0;
+		write(nsd,&ret,sizeof(ret));
+		return ret;
+	}
+	ret=1;
+	write(nsd,&ret,sizeof(ret));
+	return ret;
+}
+
+int BalanceEnquiry(int nsd,int account_no){
+	int fd,nbytes,ret;
+	struct user u;
+	if(account_no & 1)
+		fd=open("normal_user_db",O_RDONLY);
+	else
+		fd=open("joint_account_user_db",O_RDONLY);
+	lock(fd,F_RDLCK);
+	while(nbytes=read(fd,&u,sizeof(u))){
+		if(u.account_no==account_no && u.status==true){
+			ret=1;
+			write(nsd,&ret,sizeof(ret));
+			write(nsd,&u.amount,sizeof(u.amount));
+			break;		
+		}
+	}
+	unlock(fd);
+	close(fd);
+	if(nbytes==0){
+		ret=0;
+		write(nsd,&ret,sizeof(ret));
+		return 0;
+	}
+	return 1;
+}
+
 int main(){
 	int fd=open("normal_user_db",O_RDWR|O_CREAT|O_EXCL,0764);
 	close(fd);
@@ -525,10 +600,10 @@ int main(){
 							ret=Deposit(nsd,account_no);
 						}
 						else if(i==2){
-							//ret=Withdraw(nsd);
+							ret=Withdraw(nsd,account_no);
 						}
 						else if(i==3){
-							//ret=BalanceEnquiry(nsd);
+							ret=BalanceEnquiry(nsd,account_no);
 						}
 						else if(i==4){
 							//ret=PasswordChange(nsd);
