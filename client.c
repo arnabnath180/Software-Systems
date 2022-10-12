@@ -323,6 +323,32 @@ int BalanceEnquiry(int sd,int account_no){
 	}
 }
 
+int PasswordChange(int sd,int account_no){
+	int ret;
+	char pswd[20];
+	read(sd,&ret,sizeof(ret));
+	if(ret==0){
+		printf("Search failed\n");
+		return 0;
+	}
+	printf("Enter old password:\n");
+	getchar();
+	fgets(pswd,sizeof(pswd),stdin);
+	pswd[strlen(pswd)-1]='\0';
+	write(sd,pswd,sizeof(pswd));
+	read(sd,&ret,sizeof(ret));
+	if(ret==0){
+		printf("Password does not match\n");
+		return 0;
+	}
+	printf("Enter new password:\n");
+	fgets(pswd,sizeof(pswd),stdin);
+	pswd[strlen(pswd)-1]='\0';
+	write(sd,pswd,sizeof(pswd));
+	printf("Operation Success\n");
+	return 1;	
+}
+
 int main(){
 	struct sockaddr_in serv;
 	int sd=socket(AF_INET,SOCK_STREAM,0);
@@ -356,7 +382,7 @@ int main(){
 					ret=BalanceEnquiry(sd,account_no);	
 				}
 				else if(i==4){
-					//ret=PasswordChange(sd);	
+					ret=PasswordChange(sd,account_no);	
 				}
 				else if(i==5){
 					//ret=ViewDetails(sd);	

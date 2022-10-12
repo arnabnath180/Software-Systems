@@ -553,6 +553,45 @@ int BalanceEnquiry(int nsd,int account_no){
 	return 1;
 }
 
+int PasswordChange(int nsd,int account_no){
+	int fd,nbytes,ret;
+	char pswd[20];
+	struct user u;
+	if(account_no & 1)
+		fd=open("normal_user_db",O_RDWR);
+	else
+		fd=open("joint_account_user_db",O_RDWR);
+	lock(fd,F_WRLCK);
+	while(nbytes=read(fd,&u,sizeof(u))){
+		if(u.account_no==account_no && u.status==true){
+			ret=1;
+			write(nsd,&ret,sizeof(ret));
+			read(nsd,pswd,sizeof(pswd));
+			if(!strcmp(pswd,u.pswd)){
+				ret=1;
+				write(nsd,&ret,sizeof(ret));
+				read(nsd,u.pswd,sizeof(u.pswd));
+				lseek(fd,(-1)*sizeof(u),SEEK_CUR);
+				write(fd,&u,sizeof(u));
+				break;		
+			}
+			else{
+				ret=0;
+				write(nsd,&ret,sizeof(ret));
+				break;
+			}
+		}
+	}
+	unlock(fd);
+	close(fd);
+	if(nbytes==0){
+		ret=0;
+		write(nsd,&ret,sizeof(ret));
+		return 0;
+	}
+	return ret;	
+}
+
 int main(){
 	int fd=open("normal_user_db",O_RDWR|O_CREAT|O_EXCL,0764);
 	close(fd);
@@ -606,7 +645,7 @@ int main(){
 							ret=BalanceEnquiry(nsd,account_no);
 						}
 						else if(i==4){
-							//ret=PasswordChange(nsd);
+							ret=PasswordChange(nsd,account_no);
 						}
 						else if(i==5){
 							//ret=ViewDetails(sd);	
