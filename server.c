@@ -424,8 +424,58 @@ int login_user(int nsd){
 	if(nbytes==0){
 		ret=0;
 		write(nsd,&ret,sizeof(ret));
+		return ret;
 	}
-	return ret;	
+	return account_no;	
+}
+
+int Deposit(int nsd,int account_no){
+	int amount,nbytes,ret;
+	struct user u;
+	struct transaction tr;
+	read(nsd,&amount,sizeof(amount));
+	int fd;
+	if(account_no & 1)
+		fd=open("normal_user_db",O_RDWR);
+	else
+		fd=open("joint_account_user_db",O_RDWR);
+	lock(fd,F_WRLCK);
+	while(nbytes=read(fd,&u,sizeof(u))){
+		if(u.account_no==account_no && u.status==true){
+			int fd1=open("transactions_db",O_RDWR);
+			lock(fd1,F_WRLCK);
+			lseek(fd1,0,SEEK_END);
+			tr.account_no=u.account_no;
+			tr.amount=amount;
+			tr.debited=false;
+			tr.credited=true;
+			time_t t=time(NULL);
+			struct tm *tm=localtime(&t);
+			tr.time.tm_sec=tm->tm_sec;
+			tr.time.tm_min=tm->tm_min;
+			tr.time.tm_hour=tm->tm_hour;
+			tr.time.tm_year=tm->tm_year;
+			tr.time.tm_mon=tm->tm_mon;
+			tr.time.tm_mday=tm->tm_mday;
+			write(fd1,&tr,sizeof(tr));
+			unlock(fd1);
+			close(fd1);
+			u.amount=u.amount+amount;
+			lseek(fd,(-1)*sizeof(u),SEEK_CUR);
+			write(fd,&u,sizeof(u));
+			break;	
+		}
+	}
+	unlock(fd);
+	close(fd);
+	if(nbytes==0){
+		ret=0;
+		write(nsd,&ret,sizeof(ret));
+		return ret;
+	}
+	ret=1;
+	write(nsd,&ret,sizeof(ret));
+	return ret;
 }
 
 int main(){
@@ -467,11 +517,12 @@ int main(){
 			read(nsd,&i,sizeof(i));
 			if(i==1){
 				ret=login_user(nsd);
-				if(ret==1){
+				if(ret!=0){
+					int account_no=ret;
 					while(1){
 						read(nsd,&i,sizeof(i));
 						if(i==1){
-							//ret=Deposit(nsd);
+							ret=Deposit(nsd,account_no);
 						}
 						else if(i==2){
 							//ret=Withdraw(nsd);

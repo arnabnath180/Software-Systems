@@ -268,14 +268,29 @@ int login_user(int sd){
 	read(sd,&ret,sizeof(ret));
 	if(ret==0){
 		printf("login failed\n");
+		return 0;
 	}
 	else{
 		printf("login success\n");
+		return account_no;
 	}
-	return ret;
 }
 
-
+int Deposit(int sd,int account_no){
+	int amount,ret;
+	printf("Enter amount:\n");
+	scanf("%d",&amount);
+	write(sd,&amount,sizeof(amount));
+	read(sd,&ret,sizeof(ret));
+	if(ret==0){
+		printf("Operation failed\n");
+		return 0;
+	}
+	else{
+		printf("Operation success\n");
+		return 1;
+	}
+}
 
 
 
@@ -296,13 +311,14 @@ int main(){
 	write(sd,&i,sizeof(i));
 	if(i==1){
 		ret=login_user(sd);
-		if(ret==1){
+		if(ret!=0){
+			int account_no=ret;
 			while(1){
 				printf("Enter operation you want to perform:\n1:Deposit\n2:Withdraw\n3:Balance Ecquiry\n4:Password Change\n5:View Details\n6:Exit\n");
 				scanf("%d",&i);
 				write(sd,&i,sizeof(i));
 				if(i==1){
-					//ret=Deposit(sd);					
+					ret=Deposit(sd,account_no);					
 				}
 				else if(i==2){
 					//ret=Withdraw(sd);
