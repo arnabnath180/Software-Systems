@@ -40,7 +40,7 @@ struct transaction{
 	bool credited;
 };
 
-int login(int sd){
+int login_admin(int sd){
 	printf("Enter phone number:\n");
 	char ph_no[11];
 	scanf("%s",ph_no);
@@ -255,13 +255,14 @@ int Delete(int sd){
 	return ret;
 }
 
-int login_user(int sd){
+int login_user(int sd,int type){
 	printf("Enter account number:\n");
 	int account_no;
 	scanf("%d",&account_no);
 	printf("Enter password:\n");
 	char pswd[20];
 	scanf("%s",pswd);
+	write(sd,&type,sizeof(type));
 	write(sd,&account_no,sizeof(account_no));
 	write(sd,pswd,sizeof(pswd));
 	int ret;
@@ -349,6 +350,39 @@ int PasswordChange(int sd,int account_no){
 	return 1;	
 }
 
+int ViewDetails(int sd,int account_no){
+	struct user u;
+	struct transaction tr;
+	int ret;
+	read(sd,&ret,sizeof(ret));
+	if(ret==1){
+		read(sd,&u,sizeof(u));
+		printf("Name:%s\n",u.name);
+		if(!(account_no & 1)){
+			printf("Name2:%s\n",u.name2);
+		}
+		printf("Phone number:%s\n",u.ph_no);
+		printf("Amount:%ld\n",u.amount);
+		printf("Account number:%d\n",u.account_no);
+		printf("Transactions Details:\n");
+		while(1){
+			read(sd,&tr,sizeof(tr));
+			if(tr.account_no==0) 
+				break;	
+			if(tr.debited==true)
+				printf("Debited\n");
+			if(tr.credited==true)
+				printf("Credited\n");
+			printf("Amount:%d\n",tr.amount);
+			printf("Time:%d:%d:%d\n",tr.time.tm_hour,tr.time.tm_min,tr.time.tm_sec);
+			printf("Time:%d:%d:%d\n",tr.time.tm_year+1900,tr.time.tm_mon+1,tr.time.tm_mday);
+		}
+		return ret;
+	}
+	printf("Search failed\n");
+	return ret;
+}
+
 int main(){
 	struct sockaddr_in serv;
 	int sd=socket(AF_INET,SOCK_STREAM,0);
@@ -365,11 +399,11 @@ int main(){
 	scanf("%d",&i);
 	write(sd,&i,sizeof(i));
 	if(i==1){
-		ret=login_user(sd);
+		ret=login_user(sd,i);
 		if(ret!=0){
 			int account_no=ret;
 			while(1){
-				printf("Enter operation you want to perform:\n1:Deposit\n2:Withdraw\n3:Balance Ecquiry\n4:Password Change\n5:View Details\n6:Exit\n");
+				printf("Enter operation you want to perform:\n1:Deposit\n2:Withdraw\n3:Balance Enquiry\n4:Password Change\n5:View Details\n6:Exit\n");
 				scanf("%d",&i);
 				write(sd,&i,sizeof(i));
 				if(i==1){
@@ -385,7 +419,7 @@ int main(){
 					ret=PasswordChange(sd,account_no);	
 				}
 				else if(i==5){
-					//ret=ViewDetails(sd);	
+					ret=ViewDetails(sd,account_no);	
 				}
 				else{
 					break;
@@ -394,11 +428,36 @@ int main(){
 		}			
 	}
 	else if(i==2){
-			
-		
+		ret=login_user(sd,i);
+		if(ret!=0){
+			int account_no=ret;
+			while(1){
+				printf("Enter operation you want to perform:\n1:Deposit\n2:Withdraw\n3:Balance Enquiry\n4:Password Change\n5:View Details\n6:Exit\n");
+				scanf("%d",&i);
+				write(sd,&i,sizeof(i));
+				if(i==1){
+					ret=Deposit(sd,account_no);					
+				}
+				else if(i==2){
+					ret=Withdraw(sd,account_no);
+				}
+				else if(i==3){
+					ret=BalanceEnquiry(sd,account_no);	
+				}
+				else if(i==4){
+					ret=PasswordChange(sd,account_no);	
+				}
+				else if(i==5){
+					ret=ViewDetails(sd,account_no);	
+				}
+				else{
+					break;
+				}
+			}
+		}				
 	}
 	else if(i==3){
-		ret=login(sd);
+		ret=login_admin(sd);
 		if(ret==1){
 			while(1){
 				printf("Enter operation you want to perform:\n1:Add\n2:Delete\n3:Modify\n4:Search\n5:Exit\n");

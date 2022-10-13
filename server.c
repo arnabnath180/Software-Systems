@@ -404,11 +404,12 @@ int login_user(int nsd){
 	int account_no;
 	int fd;
 	int nbytes;
-	int ret;
+	int ret,type;
 	char pswd[20];
+	read(nsd,&type,sizeof(type));
 	read(nsd,&account_no,sizeof(account_no));
 	read(nsd,pswd,sizeof(pswd));
-	if(account_no & 1)
+	if(type==1)
 		fd=open("normal_user_db",O_RDONLY);
 	else
 		fd=open("joint_account_user_db",O_RDONLY);
@@ -592,6 +593,46 @@ int PasswordChange(int nsd,int account_no){
 	return ret;	
 }
 
+int ViewDetails(int nsd,int account_no){
+	struct user u;
+	struct transaction tr;
+	int ret,fd,fd1,nbytes;
+	if(account_no & 1)
+		fd=open("normal_user_db",O_RDONLY);
+	else
+		fd=open("joint_account_user_db",O_RDONLY);
+	lock(fd,F_RDLCK);
+	while(nbytes=read(fd,&u,sizeof(u))){
+		if(u.account_no==account_no && u.status==true){
+			ret=1;
+			write(nsd,&ret,sizeof(ret));
+			write(nsd,&u,sizeof(u));
+			fd1=open("transactions_db",O_RDONLY);
+			lock(fd1,F_RDLCK);
+			struct transaction tr;
+			while(read(fd1,&tr,sizeof(tr))){
+				if(tr.account_no==account_no){
+					write(nsd,&tr,sizeof(tr));	
+				}
+			}
+			tr.account_no=0;
+			write(nsd,&tr,sizeof(tr));	
+			unlock(fd1);
+			close(fd1);
+			break;
+		}
+	}
+	unlock(fd);
+	close(fd);
+	if(nbytes==0){
+		ret=0;
+		write(nsd,&ret,sizeof(ret));
+		return 0;
+	}
+	else
+		return 1;
+}
+
 int main(){
 	int fd=open("normal_user_db",O_RDWR|O_CREAT|O_EXCL,0764);
 	close(fd);
@@ -648,7 +689,7 @@ int main(){
 							ret=PasswordChange(nsd,account_no);
 						}
 						else if(i==5){
-							//ret=ViewDetails(sd);	
+							ret=ViewDetails(nsd,account_no);	
 						}
 						else{
 							break;
@@ -657,7 +698,31 @@ int main(){
 				}
 			}
 			else if(i==2){
-				
+				ret=login_user(nsd);
+				if(ret!=0){
+					int account_no=ret;
+					while(1){
+						read(nsd,&i,sizeof(i));
+						if(i==1){
+							ret=Deposit(nsd,account_no);
+						}
+						else if(i==2){
+							ret=Withdraw(nsd,account_no);
+						}
+						else if(i==3){
+							ret=BalanceEnquiry(nsd,account_no);
+						}
+						else if(i==4){
+							ret=PasswordChange(nsd,account_no);
+						}
+						else if(i==5){
+							ret=ViewDetails(nsd,account_no);	
+						}
+						else{
+							break;
+						}
+					}
+				}
 			}
 			else if(i==3){
 				ret=administrator_login(nsd);
