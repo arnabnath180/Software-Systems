@@ -167,16 +167,9 @@ int Add(int nsd){
 int Search(int nsd){
 	struct user u;
 	int ret;
-	int type;
-	read(nsd,&type,sizeof(type));
-	if(type!=1 && type!=2){
-		ret=0;
-		write(nsd,&ret,sizeof(ret));
-		return ret;
-	}
 	int account_no;
 	read(nsd,&account_no,sizeof(account_no));
-	if(type==1){
+	if(account_no & 1){
 		int fd=open("normal_user_db",O_RDONLY);
 		lock(fd,F_RDLCK);
 		while(read(fd,&u,sizeof(u))){
@@ -240,15 +233,9 @@ int Search(int nsd){
 int Modify(int nsd){
 	int type,ret,nbytes,nr=0;
 	struct user u;
-	read(nsd,&type,sizeof(type));
-	if(type!=1 && type!=2){
-		ret=0;
-		write(nsd,&ret,sizeof(ret));
-		return ret;
-	}
 	int account_no;
 	read(nsd,&account_no,sizeof(account_no));
-	if(type==1){
+	if(account_no & 1){
 		int fd=open("normal_user_db",O_RDONLY);
 		lock(fd,F_RDLCK);
 		while(nbytes=read(fd,&u,sizeof(u))){
@@ -284,7 +271,7 @@ int Modify(int nsd){
 		return 0;
 	}
 	read(nsd,&u,sizeof(u));
-	if(type==1){
+	if(account_no & 1){
 		int fd=open("normal_user_db",O_RDWR);
 		lock(fd,F_WRLCK);
 		lseek(fd,nr*sizeof(u),SEEK_SET);
@@ -329,15 +316,9 @@ int Modify(int nsd){
 int Delete(int nsd){
 	int type,ret,nbytes,nr=0;
 	struct user u;
-	read(nsd,&type,sizeof(type));
-	if(type!=1 && type!=2){
-		ret=0;
-		write(nsd,&ret,sizeof(ret));
-		return ret;
-	}
 	int account_no;
 	read(nsd,&account_no,sizeof(account_no));
-	if(type==1){
+	if(account_no & 1){
 		int fd=open("normal_user_db",O_RDONLY);
 		lock(fd,F_RDLCK);
 		while(nbytes=read(fd,&u,sizeof(u))){
@@ -372,7 +353,7 @@ int Delete(int nsd){
 		write(nsd,&ret,sizeof(ret));
 		return 0;
 	}
-	if(type==1){
+	if(account_no & 1){
 		int fd=open("normal_user_db",O_RDWR);
 		lock(fd,F_WRLCK);
 		lseek(fd,nr*sizeof(u),SEEK_SET);

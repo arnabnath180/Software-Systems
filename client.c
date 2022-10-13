@@ -108,16 +108,7 @@ int Add(int sd){
 int Search(int sd){
 	struct user u;
 	struct transaction tr;
-	printf("Enter account type:\n1:Normal user\n2:Joint account\n");
-	int type;
 	int ret;
-	scanf("%d",&type);
-	write(sd,&type,sizeof(type));
-	if(type!=1 && type!=2){
-		read(sd,&ret,sizeof(ret));
-		printf("Search failed\n");
-		return ret;
-	}
 	printf("Enter account number:\n");
 	int account_no;
 	scanf("%d",&account_no);
@@ -126,7 +117,7 @@ int Search(int sd){
 	if(ret==1){
 		read(sd,&u,sizeof(u));
 		printf("Name:%s\n",u.name);
-		if(type==2){
+		if(!(account_no & 1)){
 			printf("Name2:%s\n",u.name2);
 		}
 		printf("Phone number:%s\n",u.ph_no);
@@ -143,7 +134,7 @@ int Search(int sd){
 				printf("Credited\n");
 			printf("Amount:%d\n",tr.amount);
 			printf("Time:%d:%d:%d\n",tr.time.tm_hour,tr.time.tm_min,tr.time.tm_sec);
-			printf("Time:%d:%d:%d\n",tr.time.tm_year+1900,tr.time.tm_mon+1,tr.time.tm_mday);
+			printf("Date:%d:%d:%d\n",tr.time.tm_year+1900,tr.time.tm_mon+1,tr.time.tm_mday);
 		}
 		return ret;
 	}
@@ -153,16 +144,7 @@ int Search(int sd){
 
 int Modify(int sd){
 	struct user u;
-	printf("Enter account type:\n1:Normal user\n2:Joint account\n");
-	int type;
 	int ret,i;
-	scanf("%d",&type);
-	write(sd,&type,sizeof(type));
-	if(type!=1 && type!=2){
-		read(sd,&ret,sizeof(ret));
-		printf("Search failed\n");
-		return ret;
-	}
 	printf("Enter account number\n");
 	int account_no;
 	scanf("%d",&account_no);
@@ -174,7 +156,7 @@ int Modify(int sd){
 	}
 	read(sd,&u,sizeof(u));
 	printf("Name:%s\n",u.name);
-	if(type==2){
+	if(!(account_no & 1)){
 		printf("Name2:%s\n",u.name2);
 	}
 	printf("Phone number:%s\n",u.ph_no);
@@ -191,7 +173,7 @@ int Modify(int sd){
 	else{
 		u.name[0]='\0';
 	}
-	if(type==2){
+	if(!(account_no & 1)){
 		printf("Change username2\n1:Yes\n2:No\n");
 		scanf("%d",&i);
 		if(i==1){
@@ -221,16 +203,7 @@ int Modify(int sd){
 
 int Delete(int sd){
 	struct user u;
-	printf("Enter account type:\n1:Normal user\n2:Joint account\n");
-	int type;
 	int ret,i;
-	scanf("%d",&type);
-	write(sd,&type,sizeof(type));
-	if(type!=1 && type!=2){
-		read(sd,&ret,sizeof(ret));
-		printf("Search failed\n");
-		return ret;
-	}
 	printf("Enter account number\n");
 	int account_no;
 	scanf("%d",&account_no);
@@ -242,7 +215,7 @@ int Delete(int sd){
 	}
 	read(sd,&u,sizeof(u));
 	printf("Name:%s\n",u.name);
-	if(type==2){
+	if(!(account_no & 1)){
 		printf("Name2:%s\n",u.name2);
 	}
 	printf("Phone number:%s\n",u.ph_no);
@@ -315,7 +288,7 @@ int BalanceEnquiry(int sd,int account_no){
 	read(sd,&ret,sizeof(ret));
 	if(ret==1){
 		read(sd,&amount,sizeof(amount));
-		printf("%ld\n",amount);
+		printf("Balance:%ld\n",amount);
 		return 1;
 	}
 	else{
@@ -375,7 +348,7 @@ int ViewDetails(int sd,int account_no){
 				printf("Credited\n");
 			printf("Amount:%d\n",tr.amount);
 			printf("Time:%d:%d:%d\n",tr.time.tm_hour,tr.time.tm_min,tr.time.tm_sec);
-			printf("Time:%d:%d:%d\n",tr.time.tm_year+1900,tr.time.tm_mon+1,tr.time.tm_mday);
+			printf("Date:%d:%d:%d\n",tr.time.tm_year+1900,tr.time.tm_mon+1,tr.time.tm_mday);
 		}
 		return ret;
 	}
