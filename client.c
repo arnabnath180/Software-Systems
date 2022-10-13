@@ -30,6 +30,7 @@ struct user{
 	long amount;
 	int account_no;
 	bool status;
+	char ph_no2[11];
 }; 
 
 struct transaction{
@@ -94,6 +95,13 @@ int Add(int sd){
 	fgets(ph_no,11,stdin);
 	getchar();
 	write(sd,ph_no,sizeof(ph_no));
+	if(type==2){
+		char ph_no2[11];
+		printf("Enter phone number2:\n");
+		fgets(ph_no2,11,stdin);
+		getchar();
+		write(sd,ph_no2,sizeof(ph_no2));
+	}
 	printf("Enter password:\n");
 	char pswd[20];
 	fgets(pswd,20,stdin);
@@ -121,6 +129,9 @@ int Search(int sd){
 			printf("Name2:%s\n",u.name2);
 		}
 		printf("Phone number:%s\n",u.ph_no);
+		if(!(account_no & 1)){
+			printf("Phone number2:%s\n",u.ph_no2);
+		}
 		printf("Amount:%ld\n",u.amount);
 		printf("Account number:%d\n",u.account_no);
 		printf("Transactions Details:\n");
@@ -160,6 +171,9 @@ int Modify(int sd){
 		printf("Name2:%s\n",u.name2);
 	}
 	printf("Phone number:%s\n",u.ph_no);
+	if(!(account_no & 1)){
+		printf("Phone number2:%s\n",u.ph_no2);
+	}
 	printf("Amount:%ld\n",u.amount);
 	printf("Account number:%d\n",u.account_no);
 	printf("Change username\n1:Yes\n2:No\n");
@@ -186,6 +200,9 @@ int Modify(int sd){
 			u.name2[0]='\0';
 		}
 	}
+	else{
+		u.name2[0]='\0';
+	}
 	printf("Change phone number\n1:Yes\n2:No\n");
 	scanf("%d",&i);
 	if(i==1){
@@ -196,8 +213,24 @@ int Modify(int sd){
 	else{
 		u.ph_no[0]='\0';
 	}
+	if(!(account_no & 1)){
+		printf("Change phone number2\n1:Yes\n2:No\n");
+		scanf("%d",&i);
+		if(i==1){
+			printf("Enter phone number2:\n");
+			getchar();
+			fgets(u.ph_no2,11,stdin);
+		}
+		else{
+			u.ph_no2[0]='\0';
+		}
+	}
+	else{
+		u.ph_no2[0]='\0';
+	}
 	write(sd,&u,sizeof(u));
 	read(sd,&ret,sizeof(ret));
+	printf("Modified successfully\n");
 	return ret;
 }
 
@@ -219,6 +252,9 @@ int Delete(int sd){
 		printf("Name2:%s\n",u.name2);
 	}
 	printf("Phone number:%s\n",u.ph_no);
+	if(!(account_no & 1)){
+		printf("Phone number2:%s\n",u.ph_no2);
+	}
 	printf("Amount:%ld\n",u.amount);
 	printf("Account number:%d\n",u.account_no);
 	read(sd,&ret,sizeof(ret));

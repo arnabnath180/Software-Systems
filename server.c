@@ -30,6 +30,7 @@ struct user{
 	long amount;
 	int account_no;
 	bool status;
+	char ph_no2[11];
 }; 
 
 struct transaction{
@@ -105,6 +106,9 @@ int Add(int nsd){
 	}
 	read(nsd,&u.amount,sizeof(u.amount));
 	read(nsd,u.ph_no,sizeof(u.ph_no));
+	if(u.type==2){
+		read(nsd,u.ph_no2,sizeof(u.ph_no2));
+	}
 	read(nsd,u.pswd,sizeof(u.pswd));
 	if(u.type==2){
 		int fd=open("joint_account_user_db",O_RDWR);
@@ -303,6 +307,9 @@ int Modify(int nsd){
 		}
 		if(strlen(u.ph_no)==0){
 			strcpy(u.ph_no,u1.ph_no);
+		}
+		if(strlen(u.ph_no2)==0){
+			strcpy(u.ph_no2,u1.ph_no2);
 		}
 		write(fd,&u,sizeof(u));
 		unlock(fd);
