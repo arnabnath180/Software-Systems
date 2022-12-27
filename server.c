@@ -61,7 +61,50 @@ void unlock(int fd){
 	fcntl(fd,F_SETLK,&lock);
 }
 
+union semun {
+	int val;       
+	struct semid_ds *buf;  
+	unsigned short int *array;    
+};
 
+void admin_login_lock(){
+	char *str;
+	key_t key=ftok(".",1);
+	union semun arg;
+	int semid=semget(key,1,IPC_CREAT|IPC_EXCL|0744);
+	if(semid==-1){
+		semid=semget(key,1,0);
+	}
+	else{
+		arg.val=1; 
+		semctl(semid,0,SETVAL,arg);
+	}
+	struct sembuf buf={0,-1,SEM_UNDO};
+	semid=semget(key,1,0);
+	semop(semid,&buf,1);
+}
+
+void login_lock(int account_no){
+	char *str;
+	key_t key=ftok(".",account_no);
+	union semun arg;
+	int semid=semget(key,1,IPC_CREAT|IPC_EXCL|0744);
+	if(semid==-1){
+		semid=semget(key,1,0);
+	}
+	else{
+		if(account_no&1){
+			arg.val=1; 
+		}
+		else{
+			arg.val=2; 
+		}
+		semctl(semid,0,SETVAL,arg);
+	}
+	struct sembuf buf={0,-1,SEM_UNDO};
+	semid=semget(key,1,0);
+	semop(semid,&buf,1);
+}
 
 int administrator_login(int nsd){
 	struct administrator{
@@ -78,6 +121,7 @@ int administrator_login(int nsd){
 	lock(fd,F_RDLCK);
 	while(nbytes=read(fd,&administrator_db,sizeof(administrator_db))){
 		if(!strcmp(administrator_db.ph_no,ph_no) && !strcmp(administrator_db.pswd,pswd)){
+			admin_login_lock();
 			ret=1;
 			write(nsd,&ret,sizeof(ret));
 			break;
@@ -404,6 +448,7 @@ int login_user(int nsd){
 	lock(fd,F_RDLCK);
 	while(nbytes=read(fd,&u,sizeof(u))){
 		if(u.account_no==account_no && !strcmp(u.pswd,pswd) && u.status==true){
+			login_lock(account_no);
 			ret=1;
 			write(nsd,&ret,sizeof(ret));
 			break;
